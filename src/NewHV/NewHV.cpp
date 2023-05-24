@@ -23,7 +23,10 @@ NewHVIntf::NewHVIntf(int i2cFile, uint32_t autoReadIn, uint8_t dacAddr, uint8_t 
 
 NewHVIntf::~NewHVIntf() {
   i2cFile = 0;
-  voltage = 0;
+  voltageV = 0.0;
+  voltageDac = 0;
+  currentA = 0.0;
+  currentAdc = 0;
   
   //Turn off output voltage
   setBias(0.0);
@@ -64,8 +67,8 @@ void NewHVIntf::setBias(float vSet) {
 
 
 bool NewHVIntf::applyBias() {
-  if(dac.writeWord(0x04, voltageDac)) {
-    printf("Failed to apply bias to DAC %02x", dac.getAddress());
+  if(dac->writeWord(0x04, voltageDac)) {
+    printf("Failed to apply bias to DAC %02x", dac->getAddress());
     return false;
   }
   return true;
@@ -76,7 +79,7 @@ bool NewHVIntf::readAdcSingle(float &value, bool &alert) {
   bool bSuccess = false;
 
   //Read from ADC and convert in uA
-  bSuccess = adc.getConv(currentAdc, alertFlag);
+  bSuccess = adc->getConv(currentAdc, alertFlag);
   currentA = currentAdc2I(currentAdc);
 
   //Output
@@ -86,17 +89,14 @@ bool NewHVIntf::readAdcSingle(float &value, bool &alert) {
 }
 
 
-bool NewHVIntf::readAdc(float &value, bool &alert) {
-  bool bSuccess = false;
-
+void NewHVIntf::readAdc(float &value, bool &alert) {
   //Read from ADC and convert in uA
-  bSuccess = adc.read(currentAdc, alertFlag);
+  adc->updateConv(currentAdc, alertFlag);
   currentA = currentAdc2I(currentAdc);
 
   //Output
   value = currentA;
   alert = alertFlag;
-  return bSuccess;
 }
 
 
@@ -107,7 +107,7 @@ void NewHVIntf::readAdcLoop() {
 
   
   //Start ADC auto-conversion
-  adc.startAutoConv(adc::cycleTimeT::kspsP4)
+  adc->startAutoConv(adc->cycleTimeT::kspsP4);
 
   //!@todo Automatically read ADC
 

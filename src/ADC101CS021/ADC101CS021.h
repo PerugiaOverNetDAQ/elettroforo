@@ -7,12 +7,19 @@
 #ifndef ADC101CS021_H_
 #define ADC101CS021_H_
 
-//#include <stdio.h>
-//#include <stdlib.h>
-//#include <fcntl.h>
-//#include <unistd.h>
+#include <errno.h>
+//#include <string.h>
+//#include <sys/types.h>
+//#include <sys/stat.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
 //#include <linux/i2c-dev.h>
 //#include <sys/ioctl.h>
+
+#include <unistd.h>
+#include <iostream>
 #include <stdint.h>
 
 /*!
@@ -22,7 +29,7 @@
 */
 class adc101 {
   public:
-    adc101(int i2cFile);  //!< Constructor
+    adc101(int i2cFile, uint8_t addrIn);  //!< Constructor
     virtual ~adc101();    //!< Destructor
 
     /*!
@@ -63,23 +70,22 @@ class adc101 {
       | 7 | Highest Conversion | R/W |
     */
     enum regListT : uint8_t {
-      convResult  = 0,
-      alrtSts     = 1,
-      cfg         = 2,
-      lowLim      = 3,
-      highLim     = 4,
-      hysteresis  = 5,
-      lowestConv  = 6,
-      highestConv = 7 
+      convResultReg  = 0,
+      alrtStsReg     = 1,
+      cfgReg         = 2,
+      lowLimReg      = 3,
+      highLimReg     = 4,
+      hystReg        = 5,
+      lowestConvReg  = 6,
+      highestConvReg = 7 
     };
 
     /*!
       Get conversion result and alert flag
       @param[out] value Reference to the conversion result buffer
       @param[out] alert Reference to the alert-flag buffer
-      @return false for error
     */
-    bool read(uint16_t &value, bool &alert);
+    void updateConv(uint16_t &value, bool &alert);
 
     /*!
       Start conversion and get the result (non-automatic conversion).
@@ -93,15 +99,13 @@ class adc101 {
     /*!
       Start automatic conversion
       @param[in] timer Timer for the automatic conversion; use the cycleTimeT enum
-      @return false for error
     */
-    bool startAutoConv(uint8_t timer);
+    void startAutoConv(adc101::cycleTimeT timer);
 
     /*!
       Stop automatic conversion
-      @return false for error
     */
-    bool stopAutoConv();
+    void stopAutoConv();
 
     /*!
       Set I2C address;
@@ -143,7 +147,7 @@ class adc101 {
       @param[out] value Reference to the conversion result buffer
       @return false for error
     */
-    bool readByte(uint8_t &value);
+    bool readByte(uint8_t* value);
 
     /*!
       Read 2 bytes from the ADC
@@ -205,7 +209,7 @@ class adc101 {
     */
     void configure();
 
-}
+};
 
 #endif /*ADC101CS021_H_*/
 

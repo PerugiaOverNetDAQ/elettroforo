@@ -35,34 +35,36 @@ adc101::~adc101() {
 }
 
 
-bool adc101::read(uint16_t &value, bool &alert) {
+void adc101::updateConv(uint16_t &value, bool &alert) {
   value = conversion;
   alert = alertFlag;
 }
 
 
 bool adc101::getConv(uint16_t &value, bool &alert) {
-  singleNormalConversion();
-  read(value, alert);
+  bool bSuccess = false;
+  bSuccess = singleNormalConversion();
+  updateConv(value, alert);
+  return bSuccess;
 }
 
 
-bool adc101::startAutoConv(uint8_t timer) {
-  cycleTime = timer & 0x07;
+void adc101::startAutoConv(adc101::cycleTimeT timer) {
+  cycleTime = timer;
   configure();
 }
 
 
-bool adc101::stopAutoConv() {
+void adc101::stopAutoConv() {
   cycleTime = cycleTimeT::off;
   configure();
 }
 
 
-bool adc101::readByte(uint8_t &value){
+bool adc101::readByte(uint8_t* value){
   bool bSuccess = false;
   // read back value
-  if (read(file, value, 1) == 1){
+  if (read(i2cFile, value, 1) == 1){
     bSuccess = true;
   }
   return bSuccess;
@@ -73,8 +75,8 @@ bool adc101::readWord(uint16_t &value){
   bool bSuccess = false;
   uint8_t fromI2c[2];
   // read back value
-  if (read(file, &fromI2c, sizeof(fromI2c)) == sizeof(fromI2c)){
-    *value = ((fromI2c[0]<<8)&0xFF00) | (fromI2c[1]&0x00FF);
+  if (read(i2cFile, &fromI2c, sizeof(fromI2c)) == sizeof(fromI2c)){
+    value = ((fromI2c[0]<<8)&0xFF00) | (fromI2c[1]&0x00FF);
     bSuccess = true;
   }
   return bSuccess;
@@ -83,7 +85,7 @@ bool adc101::readWord(uint16_t &value){
 
 bool adc101::setPointer(uint8_t address) {
   bool bSuccess = false;
-  if (write(i2cFile, address, sizeof(address)) == sizeof(address)) {
+  if (write(i2cFile, &address, sizeof(address)) == sizeof(address)) {
       bSuccess = true;
   }
   return bSuccess;
@@ -93,7 +95,7 @@ bool adc101::writeByte(uint8_t address, uint8_t value) {
   bool bSuccess = false;
   uint8_t buffer[2];
   
-  buffer[0] = address               // Address
+  buffer[0] = address;              // Address
   buffer[1] = value & 0xFF;         // Value
   
   if (write(i2cFile, buffer, sizeof(buffer)) == sizeof(buffer)) {
@@ -109,7 +111,7 @@ bool adc101::writeWord(uint8_t address, uint16_t value) {
   bool bSuccess = false;
   uint8_t buffer[3];
   
-  buffer[0] = address               // Address
+  buffer[0] = address;              // Address
   buffer[1] = value & 0xFF;         // Value LSB
   buffer[2] = (value >> 8) & 0xFF;  // Value MSB
   
@@ -124,14 +126,14 @@ bool adc101::writeWord(uint8_t address, uint16_t value) {
 
 bool adc101::readConversion() {
   uint16_t tempVal;
-  if (!readWord(i2cFile, tempVal)){
+  if (!readWord(tempVal)){
     //perror("Failed to read conversion from ADC");
     //exit(1);
     return false;
   }
   
-  *alertFlag = &tempVal>>15;
-  *value = (&tempVal & 0x0FFC)>>2;
+  alertFlag = tempVal>>15;
+  conversion = (tempVal & 0x0FFC)>>2;
   return true;
 }
 
@@ -141,46 +143,46 @@ void adc101::configure() {
 
   tempByte = ((cycleTime & 0x7)<<5) | (alertHold<<4) | (alertFlagEn<<3)
                   | (alertPinEn<<2) | alertPolarity;
-  if (!writeByte(regListT::cfg, tempByte)) {
-    perror("Failed to write configuration register with value %04x", value);
+  if (!writeByte(regListT::cfgReg, tempByte)) {
+    perror("Failed to configure ADC (0)");
     exit(1);
   };
 
-  if (!writeWord(regListT::lowLim, ((lowerLimit&0x03FF)<<2) )) {
-    perror("Failed to write register %u with value %04x", regListT::lowLim, value);
+  if (!writeWord(regListT::lowLimReg, ((lowerLimit&0x03FF)<<2) )) {
+    perror("Failed to configure ADC (1)");
     exit(1);
   };
 
-  if (!writeWord(regListT::highLim, ((higherLimit&0x03FF)<<2))) {
-    perror("Failed to write register %u with value %04x", regListT::highLim, value);
+  if (!writeWord(regListT::highLimReg, ((higherLimit&0x03FF)<<2))) {
+    perror("Failed to configure ADC (2)");
     exit(1);
   };
 
-  if (!writeWord(regListT::hysteresis, ((hysteresis&0x03FF)<<2))) {
-    perror("Failed to write register %u with value %04x", regListT::hysteresis, value);
+  if (!writeWord(regListT::hystReg, ((hysteresis&0x03FF)<<2))) {
+    perror("Failed to configure ADC (3)");
     exit(1);
   };
 
-  if (!writeWord(regListT::lowestConv, ((lowestConv&0x03FF)<<2))) {
-    perror("Failed to write register %u with value %04x", regListT::lowestConv, value);
+  if (!writeWord(regListT::lowestConvReg, ((lowestConv&0x03FF)<<2))) {
+    perror("Failed to configure ADC (4)");
     exit(1);
   };
 
-  if (!writeWord(regListT::highestConv, ((highestConv&0x03FF)<<2))) {
-    perror("Failed to write register %u with value %04x", regListT::highestConv, value);
+  if (!writeWord(regListT::highestConvReg, ((highestConv&0x03FF)<<2))) {
+    perror("Failed to configure ADC (5)");
     exit(1);
   };
 
   //Point to the conversion result register, for future readings
-  if (!setPointer(regListT::convResult)) {
-    perror("Failed to switch to conversion result register");
+  if (!setPointer(regListT::convResultReg)) {
+    perror("Failed to configure ADC: setPointer");
     exit(1);
   };
 }
 
 
 bool adc101::singleNormalConversion() {
-  if (!setPointer(regListT::convResult)) {
+  if (!setPointer(regListT::convResultReg)) {
     printf("Failed to switch to conversion result register\n");
     return false;
   };

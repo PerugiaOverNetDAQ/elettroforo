@@ -8,8 +8,8 @@ export VERSION_FLAGS=-DGIT_HASH="\"$(GIT_HASH)\"" -DCOMPILE_TIME="\"$(COMPILE_TI
 # Folder structure:
 OBJ := obj
 OBJARM := objarm
-SRC := ./**/
-INC := ./**/
+SRC := src
+INC := src
 EXE := exe
 
 # Compilers
@@ -43,40 +43,40 @@ HPSOPTFLAG := -g
 # HPSOPTFLAG := -O2
 
 # Objects and sources:
-OBJECTS=$(OBJ)/elettroforo.o $(OBJ)/NewHV.o $(OBJ)/ADC101CS021.o $(OBJ)/LTC1669.o
+OBJECTS := $(OBJ)/ADC101CS021.o $(OBJ)/LTC1669.o $(OBJ)/elettroforo.o $(OBJ)/NewHV.o
 
-OBJECTSHPS := $(OBJARM)/elettroforo.o $(OBJARM)/NewHV.o $(OBJARM)/ADC101CS021.o $(OBJARM)/LTC1669.o
+OBJECTSHPS := $(OBJARM)/LTC1669.o $(OBJARM)/ADC101CS021.o $(OBJARM)/NewHV.o $(OBJARM)/elettroforo.o
 
 # Executables:
 ELETTROFORO := $(EXE)/EFORO
+ELETTROFOROARM	:= $(EXE)/EFOROarm
 
 # Rules:
-all: $(ELETTROFORO)
-elettroforo: $(ELETTROFORO)
+all: $(ELETTROFORO) $(ELETTROFOROARM)
+eforo: $(ELETTROFORO)
+eforoarm: $(ELETTROFOROARM)
 
-
-$(OCADAQ): $(OBJECTS)
+$(ELETTROFORO): $(OBJECTS)
 	@echo Linking $^ to $@
 	@mkdir -pv $(EXE)
 	$(CXX) $(CPPFLAGS) $^ -o $@
 
-$(PAPERO): $(OBJECTSHPS)
+$(ELETTROFOROARM): $(OBJECTSHPS)
 ifeq ($(UNAME_S),Darwin)
 	@echo Compilation under MacOs not possibile
 else
 	@echo Linking $^ to $@
 	@mkdir -pv $(EXE)
-	$(LDARM) $(LDFLAGS) $^ -o $(PAPERO)
+	$(LDARM) $(LDFLAGS) $^ -o $@
 endif
 
 
-
-$(OBJ)/%.o: $(SRC)/%.cpp
+$(OBJ)/%.o: $(SRC)/*/%.cpp
 	@echo Compiling $< ...
 	@mkdir -pv $(OBJ)
 	$(CXX) $(CPPFLAGS) $(OPTFLAG) $(VERSION_FLAGS) -c -o $@ $<
 
-$(OBJARM)/%.o: $(SRC)/%.cpp
+$(OBJARM)/%.o: $(SRC)/*/%.cpp
 ifeq ($(UNAME_S),Darwin)
 	@echo Compilation under MacOs not possibile
 else
@@ -91,4 +91,7 @@ clean:
 	@$(RM) -Rfv $(OBJARM)
 	@$(RM) -Rfv $(EXE)
 
-.PHONY: clean
+print:
+	@echo "$(SRC) $(INC) $(OBJARM) $(OBJ)"
+
+.PHONY: clean print

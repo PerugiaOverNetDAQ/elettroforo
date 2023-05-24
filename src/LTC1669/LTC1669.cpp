@@ -18,13 +18,12 @@ ltc1669::~ltc1669() {
 bool ltc1669::writeWord(uint8_t command, uint16_t value) {
     uint8_t buffer[3];
     
-    buffer[0] = command               // Command
+    buffer[0] = command;              // Command
     buffer[1] = value & 0xFF;         // LSB
     buffer[2] = (value >> 8) & 0xFF;  // MSB
     
     if (write(i2cFile, buffer, sizeof(buffer)) != sizeof(buffer)) {
-        printf("Failed to write command 0x%02x and value %u to I2C device\n", command, value);
-        //perror("Failed to write command 0x%02x and value %u to I2C device", command, value);
+        std::cout << "Failed to write to I2C device: command 0x" << std::hex << command << " and value 0x" << value << std::dec << std::endl;
         //exit(1);
         return false;
     }
@@ -34,8 +33,7 @@ bool ltc1669::writeWord(uint8_t command, uint16_t value) {
 
 bool ltc1669::writeCommand(uint8_t command) {
     if (write(i2cFile, &command, sizeof(command)) != sizeof(command)) {
-        printf("Failed to write command 0x%02x to I2C device\n", command);
-        //perror("Failed to write command 0x%02x to I2C device", command);
+        std::cout << "Failed to write to I2C device: command 0x" << std::hex << command << std::dec << std::endl;
         //exit(1);
         return false;
     }

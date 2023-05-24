@@ -17,7 +17,7 @@
 #include <fcntl.h>
 #include "hwlib.h"
 
-#include "NewHV.h"
+#include "../NewHV/NewHV.h"
 
 NewHVIntf* nhv = nullptr; //!< Pointer to the NewHVIntf instance
 
@@ -32,7 +32,7 @@ void closeIntf(int signum){
     delete nhv;
   }
 
-  printf(' done\n')
+  printf(" done\n");
   exit(signum);
 }
 
@@ -55,6 +55,8 @@ int main(int argc, char *argv[]) {
   int adcAddr     = uint8_t(atoi(argv[4]));
 
   //Open I2C bus
+  int i2cHandle = 0;
+  const char *i2cDevice = "/dev/i2c-1";
 	if ((i2cHandle = open(i2cDevice, O_RDWR)) < 0) {
   	  // ERROR HANDLING: you can check errno to see what went wrong
 	    perror("Failed to open the i2c bus");
@@ -71,7 +73,7 @@ int main(int argc, char *argv[]) {
   signal(SIGINT, closeIntf);
 
   printf("Starting NewHV interface...\n");
-  nhv = new NewHVIntf(i2cHandle, voltageIn, autoReadIn, dacAddr, adcAddr);
+  nhv = new NewHVIntf(i2cHandle, autoReadIn, dacAddr, adcAddr);
 
   //FIXME: Always running?
   //For the moment, set some DAC voltages and exit

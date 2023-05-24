@@ -7,8 +7,11 @@
 #ifndef NHV_H_
 #define NHV_H_
 
-#include "LTC1669.h"
-#include "ADC101CS021.h"
+#include <unistd.h>
+#include <stdint.h>
+
+#include "../LTC1669/LTC1669.h"
+#include "../ADC101CS021/ADC101CS021.h"
 
 /*!
   @brief I2C-interface to the NewHV board
@@ -46,9 +49,8 @@ class NewHVIntf {
       adc101::setPointer()
       @param[out] value Reference to the conversion result buffer
       @param[out] alert Reference to the alert-flag buffer
-      @return false for error
     */
-    bool readAdc(float &value, bool &alert);
+    void readAdc(float &value, bool &alert);
 
 
     /*!
@@ -63,26 +65,26 @@ class NewHVIntf {
     //DAC
     float voltageV; //!< Set voltage, in volts
     uint16_t voltageDac;  //!< Set voltage, in DAC units
-    const float     biasMin = 0.0; //!< Minimum bias voltage the LT3482 can supply
-    const float     biasMAX = 80.0; //!< Maximum bias voltage the LT3482 can supply
-    const uint16_t  dacMin = 0; //!< DAC lowest code for meaningful output
-    const uint16_t  dacMAX = 512; //!< DAC highest code for meaningful output
-    const float     voltConvRatio = dacMax/biasMax; //!< Conversion factor from DAC codes to LT3482 out voltage
+    static constexpr float     biasMin = 0.0; //!< Minimum bias voltage the LT3482 can supply
+    static constexpr float     biasMAX = 80.0; //!< Maximum bias voltage the LT3482 can supply
+    static constexpr uint16_t  dacMin = 0; //!< DAC lowest code for meaningful output
+    static constexpr uint16_t  dacMAX = 512; //!< DAC highest code for meaningful output
+    static constexpr float voltConvRatio = dacMAX / biasMAX; //!< Conversion factor from DAC codes to LT3482 out voltage
     
     //ADC
 
     uint16_t currentAdc; //<! Current monitor in ADC units
     float currentA; //!< Current monitor (in uA)
     bool alertFlag; //!< Alert flag (MSb of conversion register)
-    const uint16_t Rgain = 40000; //!< Resistor to transform current in voltage
-    const uint8_t  Vdd = 5; //!< Supply of the ADC
-    const uint16_t resolution = 1024; //!< ADC resolution (\f$ 2^{bit} \f$)
-    const uint8_t  ImonFactor = 5; //!< Factor between output and monitored current 
-    const float    currConvRatio = (ImonFactor/Rgain)*(Vdd/resolution)*1000000; //!< Conversion factor from ADC codes to current in uA
+    static constexpr uint16_t  Rgain = 40000; //!< Resistor to transform current in voltage
+    static constexpr uint8_t   Vdd = 5; //!< Supply of the ADC
+    static constexpr uint16_t  resolution = 1024; //!< ADC resolution (\f$ 2^{bit} \f$)
+    static constexpr uint8_t   ImonFactor = 5; //!< Factor between output and monitored current 
+    static constexpr float currConvRatio = (ImonFactor/Rgain)*(Vdd/resolution)*1000000; //!< Conversion factor from ADC codes to current in uA
 
 
-    ltc1669 dac; //!< DAC interface instance
-    adc101 adc;  //!< ADC interface instance
+    ltc1669* dac; //!< DAC interface instance
+    adc101* adc;  //!< ADC interface instance
 
     /*!
       Translate the voltage from volts to DAC units.
@@ -116,7 +118,7 @@ class NewHVIntf {
     */
     float currentAdc2I(uint16_t adcVal);
 
-}
+};
 
 
 

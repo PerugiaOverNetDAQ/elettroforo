@@ -11,9 +11,12 @@
 //#include <stdio.h>
 //#include <stdlib.h>
 //#include <fcntl.h>
-//#include <unistd.h>
 //#include <linux/i2c-dev.h>
 //#include <sys/ioctl.h>
+
+#include <unistd.h>
+#include <iostream>
+#include <stdint.h>
 
 /*!
   @brief I2C-interface LTC1669 Class
@@ -24,7 +27,7 @@
 */
 class ltc1669 {
   public:
-    ltc1669(int i2cFile); //!< Constructor
+    ltc1669(int i2cFile, uint8_t addrIn); //!< Constructor
     virtual ~ltc1669();   //!< Destructor
 
     /*!
@@ -59,7 +62,7 @@ class ltc1669 {
     uint8_t addr; //!< I2C address
     const uint8_t syncAddr = 0xFC; //!< I2C address to sync all connected DACs
 
-}
+};
 
 #endif /*LTC1669_H_*/
 
