@@ -15,7 +15,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include "hwlib.h"
+//#include "hwlib.h"
 
 #include "../NewHV/NewHV.h"
 
@@ -42,14 +42,14 @@ int main(int argc, char *argv[]) {
   
   //Args
   if (argc < 5) {
-    printf("Usage:\n\telettroforo <Voltage> <Auto-read intervals> <DAC address> <ADC address>\n");
-    printf("\tVoltage: 16-bits, in volts\n");
-    printf("\tAuto-read intervals: 32-bits, in us; 0: off\n");
-    printf("\tDAC address: uint8 I2c address of DAC\n");
-    printf("\tADC address: uint8 I2c address of ADC\n");
+    printf("Usage:\n\tEFORO(arm) <Voltage> <Auto-read intervals> <DAC address> <ADC address>\n\n");
+    printf("\tVoltage:\t\tFloat\tVoltage output in volts\n");
+    printf("\tAuto-read intervals:\tuint32_t\tIntervals in us; 0: off\n");
+    printf("\tDAC address:\t\tuint8\tI2c address of DAC\n");
+    printf("\tADC address:\t\tuint8\tI2c address of ADC\n");
     return 0;
   }
-  int voltageIn   = float(atoi(argv[1]));
+  float voltageIn   = std::stof(argv[1]);
   int autoReadIn  = uint32_t(atoi(argv[2]));
   int dacAddr     = uint8_t(atoi(argv[3]));
   int adcAddr     = uint8_t(atoi(argv[4]));
@@ -74,10 +74,12 @@ int main(int argc, char *argv[]) {
 
   printf("Starting NewHV interface...\n");
   nhv = new NewHVIntf(i2cHandle, autoReadIn, dacAddr, adcAddr);
+  
+  //Apply DAC bias
+  nhv->setBias(voltageIn);
+  nhv->applyBias();
 
-  //FIXME: Always running?
-  //For the moment, set some DAC voltages and exit
-
+  //FIXME: Always running ADC?
 
   //Cleanly delete interface
   closeIntf(0);
